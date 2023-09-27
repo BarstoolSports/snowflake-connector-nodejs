@@ -35,10 +35,55 @@ describe('ConnectionConfig: basic', function ()
         errorCode: ErrorCodes.ERR_CONN_CREATE_MISSING_USERNAME
       },
       {
+        name: 'missing username with SNOWFLAKE authenticator',
+        options: 
+          { 
+            authenticator: 'SNOWFLAKE'
+          },
+        errorCode: ErrorCodes.ERR_CONN_CREATE_MISSING_USERNAME
+      },
+      {
+        name: 'missing browser timeout with EXTERNALBROWSER authenticator',
+        options:
+          {
+            authenticator: 'EXTERNALBROWSER',
+            username: 'admin',
+            account: 'snowflake',
+            browserActionTimeout: -1
+          },
+        errorCode: ErrorCodes.ERR_CONN_CREATE_INVALID_BROWSER_TIMEOUT
+      },
+      {
+        name: 'missing username with SNOWFLAKE_JWT authenticator',
+        options: 
+          { 
+            authenticator: 'SNOWFLAKE_JWT'
+          },
+        errorCode: ErrorCodes.ERR_CONN_CREATE_MISSING_USERNAME
+      },
+      {
         name: 'undefined username',
         options:
           {
             username: undefined
+          },
+        errorCode: ErrorCodes.ERR_CONN_CREATE_MISSING_USERNAME
+      },
+      {
+        name: 'undefined username with SNOWFLAKE authenticator',
+        options:
+          {
+            username: undefined,
+            authenticator: 'SNOWFLAKE'
+          },
+        errorCode: ErrorCodes.ERR_CONN_CREATE_MISSING_USERNAME
+      },
+      {
+        name: 'undefined username with SNOWFLAKE_JWT authenticator',
+        options:
+          {
+            username: undefined,
+            authenticator: 'SNOWFLAKE_JWT'
           },
         errorCode: ErrorCodes.ERR_CONN_CREATE_MISSING_USERNAME
       },
@@ -51,10 +96,64 @@ describe('ConnectionConfig: basic', function ()
         errorCode: ErrorCodes.ERR_CONN_CREATE_MISSING_USERNAME
       },
       {
+        name: 'null username with SNOWFLAKE authenticator',
+        options:
+          {
+            username: null,
+            authenticator: 'SNOWFLAKE'
+          },
+        errorCode: ErrorCodes.ERR_CONN_CREATE_MISSING_USERNAME
+      },
+      {
+        name: 'null username with SNOWFLAKE_JWT authenticator',
+        options:
+          {
+            username: null,
+            authenticator: 'SNOWFLAKE_JWT'
+          },
+        errorCode: ErrorCodes.ERR_CONN_CREATE_MISSING_USERNAME
+      },
+      {
         name: 'invalid username',
         options:
           {
             username: 0
+          },
+        errorCode: ErrorCodes.ERR_CONN_CREATE_INVALID_USERNAME
+      },
+      {
+        name: 'invalid username with SNOWFLAKE authenticator',
+        options:
+          {
+            username: 0,
+            authenticator: 'SNOWFLAKE'
+          },
+        errorCode: ErrorCodes.ERR_CONN_CREATE_INVALID_USERNAME
+      },
+      {
+        name: 'invalid username with OAUTH authenticator',
+        options:
+          {
+            username: 0,
+            authenticator: 'OAUTH'
+          },
+        errorCode: ErrorCodes.ERR_CONN_CREATE_INVALID_USERNAME
+      },
+      {
+        name: 'invalid username with EXTERNALBROWSER authenticator',
+        options:
+          {
+            username: 0,
+            authenticator: 'EXTERNALBROWSER'
+          },
+        errorCode: ErrorCodes.ERR_CONN_CREATE_INVALID_USERNAME
+      },
+      {
+        name: 'invalid username with SNOWFLAKE_JWT authenticator',
+        options:
+          {
+            username: 0,
+            authenticator: 'SNOWFLAKE_JWT'
           },
         errorCode: ErrorCodes.ERR_CONN_CREATE_INVALID_USERNAME
       },
@@ -275,6 +374,21 @@ describe('ConnectionConfig: basic', function ()
         },
         errorCode: ErrorCodes.ERR_CONN_CREATE_INVALID_PROXY_PASS
       },
+    {
+      name: 'invalid noProxy',
+      options:
+      {
+        username: 'username',
+        password: 'password',
+        account: 'account',
+        proxyHost: 'proxyHost',
+        proxyPort: 1234,
+        proxyUser: 'proxyUser',
+        proxyPassword: 'proxyPassword',
+        noProxy: 0
+      },
+      errorCode: ErrorCodes.ERR_CONN_CREATE_INVALID_NO_PROXY
+    },
       {
         name: 'invalid streamResult',
         options:
@@ -385,10 +499,43 @@ describe('ConnectionConfig: basic', function ()
           username: 'username',
           password: 'password',
           account: 'account',
-          application: 'abcdefghijklmnopABCDEFGHIJKLMNOP1234567890abcdefghijklmnopABCDEFGHIJKLMNOP1234567890'
+          application: '0123456789012345678901!%$##234567890123456789012345678901234567890'
         },
         errorCode: ErrorCodes.ERR_CONN_CREATE_INVALID_APPLICATION
-      }
+      },
+      {
+        name: 'invalid gcsUseDownscopedCredential',
+        options:
+        {
+          username: 'username',
+          password: 'password',
+          account: 'account',
+          gcsUseDownscopedCredential: 1234
+        },
+        errorCode: ErrorCodes.ERR_CONN_CREATE_INVALID_GCS_USE_DOWNSCOPED_CREDENTIAL
+      },
+      {
+        name: 'invalid disableQueryContextCache',
+        options:
+        {
+          username: 'username',
+          password: 'password',
+          account: 'account',
+          disableQueryContextCache: 1234
+        },
+        errorCode: ErrorCodes.ERR_CONN_CREATE_INVALID_DISABLED_QUERY_CONTEXT_CACHE, 
+      },
+      {
+        name: 'invalid includeRetryReason',
+        options:
+        {
+          username: 'username',
+          password: 'password',
+          account: 'account',
+          includeRetryReason: 'invalid'
+        },
+        errorCode: ErrorCodes.ERR_CONN_CREATE_INVALID_INCLUDE_RETRY_REASON,
+      },
     ];
 
   var createNegativeITCallback = function (testCase)
@@ -659,7 +806,86 @@ describe('ConnectionConfig: basic', function ()
           username: 'username',
           password: 'password'
         }
-      }
+      },
+      {
+        name: 'proxy with noproxy',
+        input:
+        {
+          username: 'username',
+          password: 'password',
+          account: 'account',
+          proxyHost: 'proxyHost',
+          proxyPort: 1234,
+          proxyUser: 'proxyUser',
+          proxyPassword: 'proxyPassword',
+          noProxy:  '*.snowflakecomputing.com'
+        },
+        options:
+        {
+          accessUrl: 'https://account.snowflakecomputing.com',
+          username: 'username',
+          password: 'password'
+        }
+      },
+      {
+        name: 'gcsUseDownscopedCredential',
+        input:
+        {
+          username: 'username',
+          password: 'password',
+          account: 'account',
+          gcsUseDownscopedCredential: true
+        },
+        options:
+        {
+          accessUrl: 'https://account.snowflakecomputing.com',
+          username: 'username',
+          password: 'password'
+        }
+      },
+      {
+        name: 'oauth without username',
+        input:
+        {
+          account: 'account',
+          authenticator: 'OAUTH',
+          token: 'token'
+        },
+        options:
+        {
+          accessUrl: 'https://account.snowflakecomputing.com',
+          account: 'account'
+        }
+      },
+      {
+        name: 'external browser without username and password',
+        input:
+        {
+          account: 'account',
+          authenticator: 'EXTERNALBROWSER'
+        },
+        options:
+        {
+          accessUrl: 'https://account.snowflakecomputing.com',
+          account: 'account'
+        }
+      },
+      {
+        name: 'disableQueryContextCache',
+        input:
+        {
+          username: 'username',
+          password: 'password',
+          account: 'account',
+          disableQueryContextCache: true
+        },
+        options:
+        {
+          accessUrl: 'https://account.snowflakecomputing.com',
+          username: 'username',
+          password: 'password'
+        }
+      },
     ];
 
   var createItCallback = function (testCase)

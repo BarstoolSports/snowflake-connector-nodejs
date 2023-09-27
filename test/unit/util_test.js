@@ -488,6 +488,40 @@ describe('Util', function ()
     }
   });
 
+  describe('Append retry parameters', function () {
+    const testCases =
+      [
+        {
+          testName: "test appending retry params with retry reason",
+          option: {
+            url: 'http://www.something.snowflakecomputing.com',
+            retryCount: 3,
+            retryReason: 429,
+            includeRetryReason: true,
+          },
+          result: 'http://www.something.snowflakecomputing.com?retryCount=3&retryReason=429'
+        },
+        {
+          testName: "test appending retry params without retry reason",
+          option: {
+            url: 'http://www.something.snowflakecomputing.com',
+            retryCount: 3,
+            retryReason: 429,
+            includeRetryReason: false,
+          },
+          result: 'http://www.something.snowflakecomputing.com?retryCount=3'
+        }
+      ];
+
+      for (let i = 0; i < testCases.length; i++) {
+        const testCase = testCases[i];
+        it(testCase.testName, function () {
+          const url = Util.url.appendRetryParam(testCase.option);
+          assert.strictEqual(url, testCase.result);
+        })
+      }
+  })
+
   it('Util.apply()', function ()
   {
     assert.strictEqual(Util.apply(null, null), null);
@@ -515,5 +549,122 @@ describe('Util', function ()
     assert.strictEqual(Util.apply(dst, src), dst);
     assert.strictEqual(Object.keys(dst).length, 1);
     assert.ok(dst.hasOwnProperty('a') && (dst.a === 2));
+  });
+
+  it('Util.isRetryableHttpError()', function ()
+  {
+    var testCasesPos =
+      [
+        {
+          name: '200 - OK',
+          statusCode: 200,
+          retry403: false,
+          isRetryable: false,
+        },
+        {
+          name: '400 - Bad Request',
+          statusCode: 400,
+          retry403: false,
+          isRetryable: false,
+        },
+        {
+          name: '403 - Forbidden',
+          statusCode: 403,
+          retry403: false,
+          isRetryable: false,
+        },
+        {
+          name: '403 - Forbidden (retry on 403)',
+          statusCode: 403,
+          retry403: true,
+          isRetryable: true,
+        },
+        {
+          name: '404 - Not Found',
+          statusCode: 404,
+          retry403: false,
+          isRetryable: false,
+        },
+        {
+          name: '408 - Request Timeout',
+          statusCode: 408,
+          retry403: false,
+          isRetryable: true,
+        },
+        {
+          name: '429 - Too Many Requests',
+          statusCode: 429,
+          retry403: false,
+          isRetryable: true,
+        },
+        {
+          name: '500 - Internal Server Error',
+          statusCode: 500,
+          retry403: false,
+          isRetryable: true,
+        },
+        {
+          name: '503 - Service Unavailable',
+          statusCode: 503,
+          retry403: false,
+          isRetryable: true,
+        },
+      ];
+
+    var testCase;
+    var err;
+    for (var index = 0, length = testCasesPos.length; index < length; index++)
+    {
+      testCase = testCasesPos[index];
+      err = {
+        response: { statusCode: testCase.statusCode }
+      };
+      assert.strictEqual(Util.isRetryableHttpError(
+        err.response, testCase.retry403), testCase.isRetryable)
+    }
+  });
+
+  describe('isPrivateKey', () => {
+    [
+      // pragma: allowlist nextline secret
+      { name: 'trimmed already key', key: '-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----' },
+      {
+        name: 'key with whitespaces at the beginning',
+        // pragma: allowlist nextline secret
+        key: '   -----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----'
+      },
+      {
+        name: 'key with whitespaces at the end',
+        // pragma: allowlist nextline secret
+        key: '-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----\n\n\n'
+      },
+    ].forEach(({ name, key }) => {
+      it(`${name} is valid`, () => {
+        assert.ok(Util.isPrivateKey(key));
+      });
+    });
+
+    [
+      { name: 'key without beginning and end', key: 'test' },
+      { name: 'key with missing beginning', key: 'test\n-----END PRIVATE KEY-----' },
+      {
+        name: 'key with missing ending',
+        // pragma: allowlist nextline secret
+        key: '   -----BEGIN PRIVATE KEY-----\ntest'
+      },
+      {
+        name: 'key with invalid beginning',
+        key: '-----BEGIN PUBLIC KEY-----\ntest\n-----END PRIVATE KEY-----\n\n\n'
+      },
+      {
+        name: 'key with invalid end',
+        // pragma: allowlist nextline secret
+        key: '-----BEGIN PRIVATE KEY-----\ntest\n-----END PUBLIC KEY-----\n\n\n'
+      },
+    ].forEach(({ name, key }) => {
+      it(`${name} is invalid`, () => {
+        assert.ok(!Util.isPrivateKey(key));
+      });
+    });
   });
 });
